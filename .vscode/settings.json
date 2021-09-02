@@ -1,0 +1,11 @@
+{
+    "editor.formatOnSave": false,
+    // With CUDA, there's a build error on Gentoo due to helper-math.h not being packaged
+    // Pulling down cuda-samples if it's not available can fix it.
+    "cmake.configureArgs": [
+        "-DENABLE_CXX11=ON",
+        "-DENABLE_CUDA=ON"
+    ],
+    "cmake.configureEnvironment": {
+    }
+}
