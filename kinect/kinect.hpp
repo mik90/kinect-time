@@ -29,13 +29,16 @@ class Kinect {
     void save_frames(std::uint32_t n_frames_to_save);
 
   private:
+    void save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) const;
+
+    KinectConfig config_;
+
     libfreenect2::Freenect2 freenect2_;
     libfreenect2::PacketPipeline* pipeline_ = nullptr;
     libfreenect2::Freenect2Device* device_ptr_ = nullptr;
     libfreenect2::Registration* registration_ = nullptr;
     libfreenect2::Frame* undistorted_ptr_ = nullptr;
     libfreenect2::Frame* registered_ptr_ = nullptr;
-
     libfreenect2::FrameMap frame_map_;
     libfreenect2::SyncMultiFrameListener* listener_ptr_ = nullptr;
 };

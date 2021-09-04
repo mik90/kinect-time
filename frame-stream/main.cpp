@@ -4,6 +4,6 @@ using namespace mik;
 
 int main(int, char*[]) {
     Kinect kinect(KinectConfig{}); // Default config
-    kinect.save_frames(1);
+    kinect.save_frames(10);
     return 0;
 }
