@@ -1,6 +1,13 @@
 # kinect-time
 Using an Xbox One Kinect and Windows adapter to hook it up with my computer
-## frame_stream
+
+## kinect/
+Wrapper around libfreenect2 to configure it as I need
+
+Tasklist:
+- [ ] Use smart pointers instead of raw pointers around libfreenect2 objects
+
+## frame_stream/
 Pulls images from kinect as bytestream or some other generic way, unsure yet
 
 ## third_party/libfreenect2

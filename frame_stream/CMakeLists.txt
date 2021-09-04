@@ -3,11 +3,14 @@ add_library(frame-stream
   frame_stream.hpp
 )
 
+target_include_directories(frame-stream PUBLIC
+ ${CMAKE_CURRENT_LIST_DIR}
+)
+
 target_link_libraries(frame-stream PUBLIC
   project_warnings
   project_options
-  GL
-  freenect2
+  kinect
 )
 
 add_executable(frame-stream-cli

@@ -1,0 +1,17 @@
+---
+Checks: >
+*,
+-readability-uppercase-literal-suffix,
+-modernize-use-trailing-return-type,
+-llvm*,
+-hicpp-*,
+-fuchsia-*,
+-google-*,
+-zircon-*,
+-abseil-*
+>
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle:     none
+
+

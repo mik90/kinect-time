@@ -20,6 +20,7 @@ set(CONAN_EXTRA_REQUIRES "")
 set(CONAN_EXTRA_OPTIONS "")
 
 add_subdirectory(third_party/libfreenect2)
+add_subdirectory(kinect)
 add_subdirectory(frame_stream)
 
 if(ENABLE_TESTING)

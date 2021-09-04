@@ -1,2 +1,9 @@
 #include "frame_stream.hpp"
-int main() { return 0; }
+#include "kinect.hpp"
+using namespace mik;
+
+int main(int, char*[]) {
+    Kinect kinect(KinectConfig{}); // Default config
+    kinect.save_frames(1);
+    return 0;
+}
