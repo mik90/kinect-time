@@ -36,3 +36,9 @@
 
 # Clangd
 /.cache
+
+# Kinect image frames
+/kinect-frames
+
+# nvidia models
+/third_party/nvidia-ngc

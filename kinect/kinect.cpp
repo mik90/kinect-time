@@ -99,33 +99,65 @@ void Kinect::save_frames(std::uint32_t n_frames_to_save) {
         ++n_frames_saved;
         std::cout << "Saving frame " << n_frames_saved << "\n";
         // TODO do this non-blocking
-        save_frame(libfreenect2::Frame::Ir, rgb_frame);
+        save_frame(libfreenect2::Frame::Color, rgb_frame);
         save_frame(libfreenect2::Frame::Ir, ir_frame);
         save_frame(libfreenect2::Frame::Depth, depth_frame);
     }
+    std::cout << "Wrote frames to " << std::filesystem::absolute(config_.image_output_dir) << "\n";
 }
 std::string frame_type_to_string(libfreenect2::Frame::Type type) {
     switch (type) {
     case libfreenect2::Frame::Color:
         return "Color";
     case libfreenect2::Frame::Ir:
-        return "Ir";
-    case libfreenect2::Frame::Depth:
         return "Infrared";
+    case libfreenect2::Frame::Depth:
+        return "Depth";
+    default:
+        return "Unknown";
+    }
+}
+
+std::string frame_format_to_string(libfreenect2::Frame::Format format) {
+    switch (format) {
+    case libfreenect2::Frame::Format::Invalid:
+        return "Invalid";
+    case libfreenect2::Frame::Format::Raw:
+        return "Raw";
+    case libfreenect2::Frame::Format::Float:
+        return "Float";
+    case libfreenect2::Frame::Format::BGRX:
+        return "BGRX";
+    case libfreenect2::Frame::Format::RGBX:
+        return "RGBX";
+    case libfreenect2::Frame::Format::Gray:
+        return "Gray";
     default:
         return "Unknown";
     }
 }
 
 void Kinect::save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) const {
-    const auto file_name =
-        frame_type_to_string(frame_type) + "-" + std::to_string(frame->timestamp) + ".dat";
-    std::fstream output_stream(config_.image_output_dir / file_name, output_stream.out);
+    const auto file_name = frame_type_to_string(frame_type) + "-" +
+                           frame_format_to_string(frame->format) + "-seq" +
+                           std::to_string(frame->sequence) + ".bin";
+
+    const auto file_path = config_.image_output_dir / file_name;
+
+    // We're writing out unsigned char instead of sgned char
+    std::basic_ofstream<unsigned char, std::char_traits<unsigned char>> output_stream(
+        file_path, output_stream.out | output_stream.binary);
+
     if (!output_stream.is_open()) {
         exit_with_error("Could not open output stream: " +
                         std::string(config_.image_output_dir / file_name));
     } else {
-        output_stream << frame->data;
+        std::cout << "Saving frame to " << file_path << "\n";
+
+        const std::size_t n_pixels = frame->width * frame->height;
+        output_stream.write(frame->data,
+                            static_cast<std::streamsize>(n_pixels * frame->bytes_per_pixel));
+        std::cout << "Frame saved.\n ";
     }
 }
 
