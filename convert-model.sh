@@ -5,8 +5,8 @@
 # Use tao-converter instead: https://github.com/NVIDIA-AI-IOT/tao-toolkit-triton-apps/blob/fc7e222c036354498e53a8ed11b5cf7c0a3e5239/scripts/download_and_convert.sh
 
 docker run --gpus=1 --rm \
-         -v$PWD/trtis_model_repo/hcgesture_tlt/1:/models \
-         nvcr.io/nvidia/tao/tao-cv-inference-pipeline:v0.3-ga-server-utilities \
+        --volume $PWD/trtis_model_repo/hcgesture_tlt/1:/models \
+        nvcr.io/nvidia/tao/tao-cv-inference-pipeline:v0.3-ga-server-utilities \
         tao-converter \
             -k nvidia_tlt  \
             -t fp16  \
