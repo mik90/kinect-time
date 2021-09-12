@@ -1,6 +1,6 @@
 # kinect-time
 
-Gesture recognition using with an Xbox One Kinect  on Linux.
+Gesture recognition using with an Xbox One Kinect on Linux.
 
 ## Usage
 
