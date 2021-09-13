@@ -3,8 +3,11 @@
     // With CUDA, there's a build error on Gentoo due to helper-math.h not being packaged
     // Pulling down cuda-samples if it's not available can fix it.
     "cmake.configureArgs": [
-        "-DENABLE_CXX11=ON",
-        "-DENABLE_CUDA=ON"
+        "-DENABLE_CXX11=ON", // libfreenect2
+        "-DENABLE_CUDA=ON", // libfreenect2
+        "-DTRITON_ENABLE_CC_GRPC=ON", // For triton-client
+        "-DTRITON_ENABLE_GPU=ON", // For triton-client
+        "-DPROTOBUF_BUILD_TESTS=OFF" //  // For triton-client's gRPC submodule
     ],
     "cmake.preferredGenerators": [
         "Ninja"

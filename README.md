@@ -36,6 +36,7 @@ Gesture recognition using with an Xbox One Kinect on Linux.
 
 - [x] convert GestureNet model file from .etlt to .plan
 - [x] get inference server up and running
+- [ ] integrate triton inference server client SDK: <https://github.com/triton-inference-server/client>
 - [ ] send frames to inference server
 
 ## frame-stream/
@@ -46,9 +47,17 @@ Pulls images from kinect as bytestream or some other generic way, unsure yet
 
 Wrapper around libfreenect2 to configure it as I need
 
+## kinect-triton-client/
+
+grPC-based client to the triton inference server. Sends over images for classification.
+
+Pulls in triton-client as well as gRPC so it'll take a while to build.
+
 ## third_party/libfreenect2
 
 Using my fork <https://github.com/mik90/libfreenect2> to grab images from the device. Allows me to build with CUDA due to some include issues.
+
+This is kept as a git submodule since it is meant to be commited to an updated.
 
 **Note:** May require GCC 10.x. So far I've been able to build with GCC 11 though.
 
