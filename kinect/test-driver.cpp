@@ -1,6 +1,7 @@
-#include "frame_stream.hpp"
 #include "kinect.hpp"
 using namespace mik;
+
+// Saves 10 frames to disk
 
 int main(int, char*[]) {
     Kinect kinect(KinectConfig{}); // Default config

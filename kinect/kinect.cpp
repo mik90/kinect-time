@@ -138,7 +138,9 @@ std::string frame_format_to_string(libfreenect2::Frame::Format format) {
 }
 
 void Kinect::save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) const {
-    const auto file_name = frame_type_to_string(frame_type) + "-" +
+    const auto frame_dimensions =
+        std::to_string(frame->width) + "x" + std::to_string(frame->height);
+    const auto file_name = frame_type_to_string(frame_type) + "-" + frame_dimensions + "-" +
                            frame_format_to_string(frame->format) + "-seq" +
                            std::to_string(frame->sequence) + ".bin";
 

@@ -1,3 +1,5 @@
+# Kinect wrapper lib
+
 add_library(kinect
   kinect.cpp
   kinect.hpp
@@ -11,9 +13,32 @@ target_include_directories(kinect PUBLIC
  ${libfreenect2_BINARY_DIR}
 )
 
+set_target_properties(kinect
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
+
 target_link_libraries(kinect PUBLIC
   project_warnings
   project_options
   GL
   freenect2
+)
+
+# Test drivers
+
+add_executable(kinect-test-driver
+  test-driver.cpp
+)
+
+set_target_properties(kinect-test-driver 
+  PROPERTIES
+  OUTPUT_NAME "test-driver"
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+target_link_libraries(kinect-test-driver PRIVATE
+  project_warnings
+  project_options
+  kinect 
 )

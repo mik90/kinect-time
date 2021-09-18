@@ -1,0 +1,9 @@
+autopep8==1.5.7
+grpcio==1.40.0
+numpy==1.21.2
+protobuf==3.18.0
+pycodestyle==2.7.0
+python-rapidjson==1.4
+six==1.16.0
+toml==0.10.2
+tritonclient==2.13.0

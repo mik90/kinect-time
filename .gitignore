@@ -43,3 +43,6 @@
 # nvidia models
 /third_party/nvidia-ngc
 /trtis_model_repo/hcgesture_tlt/1
+
+# Python venv
+/kinect-triton-client/env/

@@ -2,6 +2,35 @@
 
 Gesture recognition using with an Xbox One Kinect on Linux.
 
+Dataflow from Kinect to image classification:
+
+Xbox One Kinect -> third_party/libfreenect2 (C++ driver) -> kinect/ (C++ kinect wrapper and de-resolution-er) -> pybind11 -> kinect-triton-client (python) -> nvidia py sdk (image classification with GestureNet)
+
+The Kinect exports color images as 640x40 BGRX (4 bytes each) **TODO:** Verify resolution
+
+## Gesture recognition with GestureNet
+
+GestureNet is a gesture recognition model from nvidia.
+
+**Note:** you will need the nvidia-container-toolkit package in order to run a docker container that uses your nvidia gpu.
+I use gentoo and made use of guru's overlay from this search: <http://gpo.zugaina.org/app-emulation/nvidia-container-toolkit>
+
+This is the guide I'm following: <https://developer.nvidia.com/blog/fast-tracking-hand-gesture-recognition-ai-applications-with-pretrained-models-from-ngc/>
+    - The GestureNet doc has fp16 in one place and FP_32 in another for the model input/output types
+    - It also writes tlt-converter and trt-converter although only tao-converter was in the image, maybe it's older
+    - [ ] tell the nvidia folk that their doc is outdated, make a PR if it's in github
+
+GestureNet - pre-trained model: <https://ngc.nvidia.com/catalog/models/nvidia:tao:gesturenet>
+
+- Input is RGB Images of 160 X 160 X 3 (Width X Height X Byte depth (R, G, B))
+- Limited to frontal views, bland backgrounds, and good lighting
+
+Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver>
+
+- nvidia's dockerized "Triton Inference Server" allows the pre-trained model to be used.
+- Server quickstart guide: <https://github.com/triton-inference-server/server/blob/r21.08/docs/quickstart.md>
+- Client repo: <https://github.com/triton-inference-server/client/tree/r21.08>
+
 ## Usage
 
 - Ensure that you have an Xbox One Kinect with the extra Windows adapter that allows you to plug it in via USB.
@@ -16,7 +45,7 @@ Gesture recognition using with an Xbox One Kinect on Linux.
 - Download the pre-trained GestureNet model with [get-gesture-net.sh](get-gesture-net.sh)
 - Convert model.etlt to model.plan with [convert-model.sh](convert-model.sh)
   - an .etlt file is platform agnostic while a .plan file isn't
-- Start the server with [run-triton.sh](run-triton.sh)
+- Start the server with [run-triton-server.sh](run-triton-server.sh)
 
 ## Tasklist
 
@@ -37,6 +66,7 @@ Gesture recognition using with an Xbox One Kinect on Linux.
 - [x] convert GestureNet model file from .etlt to .plan
 - [x] get inference server up and running
 - [ ] integrate triton inference server client SDK: <https://github.com/triton-inference-server/client>
+  - tried to build it from source via CMake FetchContent but it was a pain
 - [ ] send frames to inference server
 
 ## frame-stream/
@@ -47,12 +77,6 @@ Pulls images from kinect as bytestream or some other generic way, unsure yet
 
 Wrapper around libfreenect2 to configure it as I need
 
-## kinect-triton-client/
-
-grPC-based client to the triton inference server. Sends over images for classification.
-
-Pulls in triton-client as well as gRPC so it'll take a while to build.
-
 ## third_party/libfreenect2
 
 Using my fork <https://github.com/mik90/libfreenect2> to grab images from the device. Allows me to build with CUDA due to some include issues.
@@ -60,6 +84,20 @@ Using my fork <https://github.com/mik90/libfreenect2> to grab images from the de
 This is kept as a git submodule since it is meant to be commited to an updated.
 
 **Note:** May require GCC 10.x. So far I've been able to build with GCC 11 though.
+
+## kinect-triton-client/
+
+gRPC-based python client to the triton inference server. Sends over images for classification.
+
+Enter venv and download the packages with
+
+```bash
+cd kinect-triton-client
+source ./env/bin/activate
+pip install -r ./requirements.txt
+```
+
+In the venv, the requirements.txt file is generated with `pip freeze > requirements.txt`
 
 ## third_party/nvidia-ngc
 
@@ -78,22 +116,3 @@ Using my fork <https://github.com/mik90/grt> to try to get gestures from those i
 ## trtis_model_repo/
 
 Workspace for the pre-trained gesture classification model from nvidia
-
-**Note:** you will need the nvidia-container-toolkit package in order to run a docker container that uses your nvidia gpu.
-
-I use gentoo and made use of guru's overlay from this search: <http://gpo.zugaina.org/app-emulation/nvidia-container-toolkit>
-
-This is the guide I'm following: <https://developer.nvidia.com/blog/fast-tracking-hand-gesture-recognition-ai-applications-with-pretrained-models-from-ngc/>
-    - The GestureNet doc has fp16 in one place and FP_32 in another for the model input/output types
-    - It also writes tlt-converter and trt-converter although only tao-converter was in the image, maybe it's older
-    - [ ] tell the nvidia folk that their doc is outdated, make a PR if it's in github
-
-GestureNet - pre-trained model: <https://ngc.nvidia.com/catalog/models/nvidia:tao:gesturenet>
-
-- Input is RGB Images of 160 X 160 X 3 (Width X Height X Byte depth (R, G, B))
-- Limited to frontal views, bland backgrounds, and good lighting
-
-Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver>
-
-- nvidia's dockerized "Triton Inference Server" allows the pre-trained model to be used.
-- Quickstart guide: <https://github.com/triton-inference-server/server/blob/r21.08/docs/quickstart.md>
