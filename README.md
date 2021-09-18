@@ -34,12 +34,14 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
 ## Usage
 
 - Ensure that you have an Xbox One Kinect with the extra Windows adapter that allows you to plug it in via USB.
-- Build the frame-stream-cli with:
+- If you build libfreenect2 with CUDA support, Clang won't work (I tried Clang 12.0.1) so just use GCC (I used GCC 11.2)
+
+- Build kinect-test-driver with:
 
     ```bash
     mkdir build && cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-    cmake --build . --target frame-stream-cli
+    cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    cmake --build . --target test-driver
     ```
 
 - Download the pre-trained GestureNet model with [get-gesture-net.sh](get-gesture-net.sh)
@@ -56,19 +58,25 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
   - started on impl
   - [x] figure out format to save as??
     - Save relative to bytes per pixel
-  - [ ] don't save in a blocking way
-- [ ] Create stream of frames for input to inference engine
-  - [ ] resize frames to resolution desired by inference engine (160x160x3)
-- [ ] Use smart pointers instead of raw pointers around libfreenect2 objects
+  - [x] non-blocking `Kinect::save_frames()`
+- [ ] resize frames to resolution desired by inference engine (160x160x3)
+- ~~[ ] Use smart pointers instead of raw pointers around libfreenect2 objects~~
+  - Nope, this isn't worth it. Just causes segfaults when the test-driver is done running
 - [ ] Create Python API with pybind11 so kinect-triton-client can use it
+- [ ] create frame stream
 
 ### nvidia / GestureNet
 
 - [x] convert GestureNet model file from .etlt to .plan
 - [x] get inference server up and running
+
+### kinect-triton-client
+
 - [ ] integrate triton inference server client SDK: <https://github.com/triton-inference-server/client>
   - tried to build it from source via CMake FetchContent but it was a pain. Switching to Python
 - [ ] send frames to inference server
+  - just send frames that were saved to disk (for now)
+- [ ] handle frame stream
 
 ## kinect/
 
@@ -90,6 +98,8 @@ Enter venv and download the packages with
 
 ```bash
 cd kinect-triton-client
+mkdir env
+python3 -m venv env
 source ./env/bin/activate
 pip install -r ./requirements.txt
 ```
