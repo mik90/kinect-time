@@ -29,10 +29,13 @@ class Kinect {
     void save_frames(std::uint32_t n_frames_to_save);
 
   private:
+    /// @todo void lower_resolution(libfreenect2::Frame* frame);
+    /// @todo void convert_to_gesture_net(const libfreenect2::Frame* frame);
     void save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) const;
 
     KinectConfig config_;
 
+    // libfreenect2 members
     libfreenect2::Freenect2 freenect2_;
     libfreenect2::PacketPipeline* pipeline_ = nullptr;
     libfreenect2::Freenect2Device* device_ptr_ = nullptr;

@@ -6,7 +6,7 @@ Dataflow from Kinect to image classification:
 
 Xbox One Kinect -> third_party/libfreenect2 (C++ driver) -> kinect/ (C++ kinect wrapper and de-resolution-er) -> pybind11 -> kinect-triton-client (python) -> nvidia py sdk (image classification with GestureNet)
 
-The Kinect exports color images as 640x40 BGRX (4 bytes each) **TODO:** Verify resolution
+The Kinect exports color images as 1920x1080 where each pixel is BGRX (4 bytes, last byte is empty space)
 
 ## Gesture recognition with GestureNet
 
@@ -58,20 +58,17 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
     - Save relative to bytes per pixel
   - [ ] don't save in a blocking way
 - [ ] Create stream of frames for input to inference engine
-  - [ ] resize frames to resolution desired by inference engine
+  - [ ] resize frames to resolution desired by inference engine (160x160x3)
 - [ ] Use smart pointers instead of raw pointers around libfreenect2 objects
+- [ ] Create Python API with pybind11 so kinect-triton-client can use it
 
 ### nvidia / GestureNet
 
 - [x] convert GestureNet model file from .etlt to .plan
 - [x] get inference server up and running
 - [ ] integrate triton inference server client SDK: <https://github.com/triton-inference-server/client>
-  - tried to build it from source via CMake FetchContent but it was a pain
+  - tried to build it from source via CMake FetchContent but it was a pain. Switching to Python
 - [ ] send frames to inference server
-
-## frame-stream/
-
-Pulls images from kinect as bytestream or some other generic way, unsure yet
 
 ## kinect/
 

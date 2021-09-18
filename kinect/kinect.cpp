@@ -105,6 +105,7 @@ void Kinect::save_frames(std::uint32_t n_frames_to_save) {
     }
     std::cout << "Wrote frames to " << std::filesystem::absolute(config_.image_output_dir) << "\n";
 }
+
 std::string frame_type_to_string(libfreenect2::Frame::Type type) {
     switch (type) {
     case libfreenect2::Frame::Color:

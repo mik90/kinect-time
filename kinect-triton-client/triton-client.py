@@ -26,8 +26,9 @@ if __name__ == '__main__':
     # Infer
     inputs = []
     outputs = []
-    # Kinect exports color images as BGRX (4 bytes each)
-    inputs.append(grpcclient.InferInput('INPUT0', [160, 160], "INT32"))
+    # GestureNet expects images as 160x160 with each pixel as RGB (3 bytes)
+    # TODO Is this really a UINT8?
+    inputs.append(grpcclient.InferInput('INPUT0', [160, 160, 3], "UINT8"))
 
     # Create the data for the two input tensors. Initialize the first
     # to unique integers and the second to all ones.
