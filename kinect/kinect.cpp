@@ -95,7 +95,7 @@ void Kinect::save_frames(std::uint32_t n_frames_to_save) {
         }
 
         libfreenect2::Frame* rgb_frame = frame_map_[libfreenect2::Frame::Color];
-        [[maybe_unused]] libfreenect2::Frame* ir_frame = frame_map_[libfreenect2::Frame::Ir];
+        libfreenect2::Frame* ir_frame = frame_map_[libfreenect2::Frame::Ir];
         libfreenect2::Frame* depth_frame = frame_map_[libfreenect2::Frame::Depth];
 
         registration_->apply(rgb_frame, depth_frame, undistorted_ptr_, registered_ptr_);
