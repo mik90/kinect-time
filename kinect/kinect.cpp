@@ -8,13 +8,14 @@
 #include <future>
 #include <iostream>
 #include <iterator>
+#include <string>
 #include <string_view>
 
 namespace mik {
 
 // I'd use std::source_location but clang doesn't have it yet so clangd will complain
-#define exit_with_error(err_msg) exit_with_error_impl(__FILE__, __LINE__, err_msg)
-void exit_with_error_impl(const char* file, std::uint32_t line, std::string_view err_msg) {
+#define HERE __FILE__, __LINE__
+void exit_with_error(const char* file, std::uint32_t line, std::string_view err_msg) {
     std::cerr << file << ":" << line << " - " << err_msg << "\n";
     std::cerr << "Exiting with return code 1\n";
     std::exit(1);
@@ -24,7 +25,8 @@ Kinect::Kinect(KinectConfig config) : config_(config) {
 
     if (!std::filesystem::exists(config_.image_output_dir)) {
         if (!std::filesystem::create_directory(config_.image_output_dir)) {
-            exit_with_error("Could not create directory: " + std::string(config_.image_output_dir));
+            exit_with_error(HERE,
+                            "Could not create directory: " + std::string(config_.image_output_dir));
         }
     }
 
@@ -44,25 +46,25 @@ Kinect::Kinect(KinectConfig config) : config_(config) {
         pipeline_ = new libfreenect2::OpenGLPacketPipeline();
         break;
     case InputPipeline::OTHER:
-        exit_with_error("InputFramework is not supported!");
+        exit_with_error(HERE, "InputFramework is not supported!");
         std::exit(1);
         break;
     }
 
     if (freenect2_.enumerateDevices() == 0) {
-        exit_with_error("no device connected!");
+        exit_with_error(HERE, "no device connected!");
     }
     const std::string serial_device_desc = freenect2_.getDefaultDeviceSerialNumber();
 
     if (!pipeline_) {
-        exit_with_error("Could not open input pipeline");
+        exit_with_error(HERE, "Could not open input pipeline");
     }
     std::cout << "Serial device: " << serial_device_desc << "\n";
 
     device_ptr_ = freenect2_.openDevice(serial_device_desc, pipeline_);
 
     if (!device_ptr_->start()) {
-        exit_with_error("Could not start Freenect2Device!");
+        exit_with_error(HERE, "Could not start Freenect2Device!");
     }
 
     // Set up listener
@@ -89,7 +91,7 @@ void Kinect::save_frames(std::uint32_t n_frames_to_save) {
     while (n_frames_saved < n_frames_to_save) {
 
         if (!listener_ptr_->waitForNewFrame(frame_map_, frame_timeout_ms)) {
-            exit_with_error("Waited too long to get a frame!");
+            exit_with_error(HERE, "Waited too long to get a frame!");
         }
 
         libfreenect2::Frame* rgb_frame = frame_map_[libfreenect2::Frame::Color];
@@ -153,8 +155,8 @@ void save_frame_impl(std::filesystem::path image_output_dir, libfreenect2::Frame
         file_path, output_stream.out | output_stream.binary);
 
     if (!output_stream.is_open()) {
-        exit_with_error("Could not open output stream: " +
-                        std::string(image_output_dir / file_name));
+        exit_with_error(HERE, "Could not open output stream: " +
+                                  std::string(image_output_dir / file_name));
     } else {
         std::cout << "Saving frame to " << file_path << "\n";
 
@@ -198,23 +200,80 @@ Kinect::~Kinect() {
     delete registration_;
 }
 
+std::optional<GestureNetPixel> GestureNetPixel::from_kinect_bgrx_pixel(const unsigned char* data,
+                                                                       std::size_t len) {
+    if (len != 4) {
+        std::cerr << "Cannot convert chunk of length " << std::to_string(len)
+                  << " to a GestureNetPixel\n";
+        return {};
+    }
+    // BGRX -> RGB
+    GestureNetPixel g_net_pixel;
+    g_net_pixel.blue = data[0];
+    g_net_pixel.green = data[1];
+    g_net_pixel.red = data[2];
+    // Disregard the last byte, but still require a length of 4 since a kinect pixel is technically
+    // 4 bytes
+    return g_net_pixel;
+}
+
 /**
- * @brief Convert from 1920x1080xBGRX to 160x160xRGB (probably RGB, unsure)
+ * @brief For width:  1920 / 160 = 12   so the color values across 12 pixels should be averaged
+ */
+GestureNetFrame::PixelRow GestureNetFrame::from_kinect_row(const unsigned char* data,
+                                                           std::size_t kinect_row_pixel_count) {
+    // Convert to GestureNet PixelRow format
+    GestureNetFrame::PixelRow g_n_row;
+    g_n_row.reserve(bytes_per_pixel() * width_in_pixels());
+
+    const auto pixels_to_merge = kinect_row_pixel_count / width_in_pixels();
+
+    GestureNetPixel g_n_pixel;
+
+    // Keep merging 12 red, green, and blue pixels with each other until the end of the row is hit
+
+    static_cast<void>(data);
+    static_cast<void>(pixels_to_merge);
+    static_cast<void>(g_n_pixel);
+    exit_with_error(HERE, "TODO");
+    return {};
+}
+
+/**
+ * @brief Convert from a Kinect color frame to a GestureNet input frame
+ *
+ * @details Convert from 1920x1080xBGRX to 160x160xRGB (probably RGB, unsure)
+ * Average out the values of a given color across multiple pixels in order to downscale.
+ * Do this for R, G, and B.
+ * For width:  1920 / 160 = 12   so the color values across 12 pixels should be averaged
+ * For height: 1080 / 160 = 6.75 so this won't be as simple. How to figure this out?
  */
 std::optional<GestureNetFrame>
-GestureNetFrame::create_from_kinect(libfreenect2::Frame::Type frame_type,
-                                    const libfreenect2::Frame* frame) {
+GestureNetFrame::from_kinect_frame(libfreenect2::Frame::Type frame_type,
+                                   const libfreenect2::Frame* frame) {
     if (frame_type != libfreenect2::Frame::Type::Color) {
         std::cerr << "Cannot convert frame from " << frame_type_to_string(frame_type)
                   << " to GestureNestFrame\n";
         return {};
     }
+
+    // Go over each row
+    for (std::size_t cur_row_idx = 0; cur_row_idx < frame->height; ++cur_row_idx) {
+        // Go over a row of pixels, then go to next row
+        for (std::size_t pixel_in_row = 0; pixel_in_row < frame->width; ++pixel_in_row) {
+        }
+    }
+
     static_cast<void>(frame);
+    exit_with_error(HERE, "TODO");
     return {};
 }
-void GestureNetFrame::write_as_jpeg(const std::filesystem::path& output) const {
+
+void GestureNetFrame::save_frame(const std::filesystem::path& output) const {
     static_cast<void>(output);
+    exit_with_error(HERE, "TODO");
 }
 
 GestureNetFrame::GestureNetFrame() {}
+
 } // namespace mik

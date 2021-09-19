@@ -3,6 +3,7 @@
  * Basing this impl off of libfreenect2's Protonect.cpp
  */
 #include "libfreenect2/frame_listener.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <future>
@@ -53,17 +54,35 @@ class Kinect {
     libfreenect2::SyncMultiFrameListener* listener_ptr_ = nullptr;
 };
 
+struct GestureNetPixel {
+    std::uint8_t red;
+    std::uint8_t green;
+    std::uint8_t blue;
+    /// @brief Should be a length of 4 (BGRX)
+    static std::optional<GestureNetPixel> from_kinect_bgrx_pixel(const unsigned char* data,
+                                                                 std::size_t len);
+};
 /**
  * @brief Input frame for nvidia GestureNet. Create from a kinect frame
  */
 class GestureNetFrame {
   public:
-    std::optional<GestureNetFrame> create_from_kinect(libfreenect2::Frame::Type frame_type,
-                                                      const libfreenect2::Frame* frame);
-    void write_as_jpeg(const std::filesystem::path& output) const;
+    using PixelRow = std::vector<GestureNetPixel>;
+    std::optional<GestureNetFrame> from_kinect_frame(libfreenect2::Frame::Type frame_type,
+                                                     const libfreenect2::Frame* frame);
+    void save_frame(const std::filesystem::path& output) const;
+
+    static std::size_t bytes_per_pixel() noexcept { return 3; };
+    static std::size_t width_in_pixels() noexcept { return 160; };
+    static std::size_t height_in_pixels() noexcept { return 160; };
+    static GestureNetFrame::PixelRow from_kinect_row(const unsigned char* data,
+                                                     std::size_t kinect_row_pixel_count = 1920);
+    // void downscale_height(); Convert 1920 to 160 pixels
 
   private:
     GestureNetFrame();
+
+    std::vector<PixelRow> pixels_;
 };
 
 } // namespace mik
