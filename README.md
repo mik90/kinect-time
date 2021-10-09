@@ -59,12 +59,14 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
   - [x] figure out format to save as??
     - Save relative to bytes per pixel
   - [x] non-blocking `Kinect::save_frames()`
-- [ ] resize frames to resolution desired by inference engine (160x160x3)
+- [x] resize frames to resolution desired by inference engine (160x160x3)
   - started on this. Merging rows and then columns
+  - [x] Merge the width and just disregard the bottom half of the image
 - ~~[ ] Use smart pointers instead of raw pointers around libfreenect2 objects~~
   - Nope, this isn't worth it. Just causes segfaults when the test-driver is done running
 - [ ] Create Python API with pybind11 so kinect-triton-client can use it
 - [ ] create frame stream
+- [ ] Actually scale down resolution from 1920x1080 to 160x160 properly
 
 ### nvidia / GestureNet
 

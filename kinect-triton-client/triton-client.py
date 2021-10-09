@@ -27,9 +27,10 @@ if __name__ == '__main__':
     inputs = []
     outputs = []
     # GestureNet expects images as 160x160 with each pixel as RGB (3 bytes)
-    # TODO Is this really a UINT8?
-    inputs.append(grpcclient.InferInput('INPUT0', [160, 160, 3], "UINT8"))
+    # Based off of ${workspaceRepo}/trtis_model_repo/hcgesture_tlt/config.pbtxt
+    inputs.append(grpcclient.InferInput('input_1', [3, 160, 160], "TYPE_FP32"))
 
+    # TODO: Make this correct for my usage
     # Create the data for the two input tensors. Initialize the first
     # to unique integers and the second to all ones.
     input0_data = np.arange(start=0, stop=16, dtype=np.int32)
@@ -40,8 +41,7 @@ if __name__ == '__main__':
     inputs[0].set_data_from_numpy(input0_data)
     inputs[1].set_data_from_numpy(input1_data)
 
-    outputs.append(grpcclient.InferRequestedOutput('OUTPUT0'))
-    outputs.append(grpcclient.InferRequestedOutput('OUTPUT1'))
+    outputs.append(grpcclient.InferRequestedOutput('activation_18'))
 
     # Test with outputs
     results = triton_client.infer(
@@ -57,8 +57,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Get the output arrays from the results
-    output0_data = results.as_numpy('OUTPUT0')
-    output1_data = results.as_numpy('OUTPUT1')
+    output0_data = results.as_numpy('activation_18')
 
     for i in range(16):
         print(
@@ -81,7 +80,7 @@ if __name__ == '__main__':
         outputs=None)
 
     # Get the output arrays from the results
-    output0_data = results.as_numpy('OUTPUT0')
+    output0_data = results.as_numpy('activation_18')
     output1_data = results.as_numpy('OUTPUT1')
 
     for i in range(16):

@@ -75,12 +75,12 @@ class GestureNetFrame {
     static std::size_t bytes_per_pixel() noexcept { return 3; };
     static std::size_t width_in_pixels() noexcept { return 160; };
     static std::size_t height_in_pixels() noexcept { return 160; };
-    static GestureNetFrame::PixelRow from_kinect_row(const unsigned char* data,
-                                                     std::size_t kinect_row_pixel_count = 1920);
+    // Unused as of yet
+    static GestureNetFrame::PixelRow from_kinect_row(const unsigned char* data);
     // void downscale_height(); Convert 1920 to 160 pixels
 
   private:
-    GestureNetFrame();
+    GestureNetFrame(std::vector<PixelRow> rows) : pixels_(std::move(rows)){};
 
     std::vector<PixelRow> pixels_;
 };

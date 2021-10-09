@@ -13,6 +13,10 @@
 
 namespace mik {
 
+using std::size_t;
+using std::uint32_t;
+using std::uint8_t;
+
 // I'd use std::source_location but clang doesn't have it yet so clangd will complain
 #define HERE __FILE__, __LINE__
 void exit_with_error(const char* file, std::uint32_t line, std::string_view err_msg) {
@@ -200,6 +204,7 @@ Kinect::~Kinect() {
     delete registration_;
 }
 
+/// @brief Pixel to pixel conversion
 std::optional<GestureNetPixel> GestureNetPixel::from_kinect_bgrx_pixel(const unsigned char* data,
                                                                        std::size_t len) {
     if (len != 4) {
@@ -220,29 +225,42 @@ std::optional<GestureNetPixel> GestureNetPixel::from_kinect_bgrx_pixel(const uns
 /**
  * @brief For width:  1920 / 160 = 12   so the color values across 12 pixels should be averaged
  */
-GestureNetFrame::PixelRow GestureNetFrame::from_kinect_row(const unsigned char* data,
-                                                           std::size_t kinect_row_pixel_count) {
+GestureNetFrame::PixelRow GestureNetFrame::from_kinect_row(const unsigned char* data) {
     // Convert to GestureNet PixelRow format
     GestureNetFrame::PixelRow g_n_row;
     g_n_row.reserve(bytes_per_pixel() * width_in_pixels());
+    constexpr size_t kinect_row_pixel_count = 1920;
+    const auto pixels_to_merge = kinect_row_pixel_count / width_in_pixels(); // 12
 
-    const auto pixels_to_merge = kinect_row_pixel_count / width_in_pixels();
-
-    GestureNetPixel g_n_pixel;
+    PixelRow gesturenet_row;
 
     // Keep merging 12 red, green, and blue pixels with each other until the end of the row is hit
+    size_t pixels_converted = 0;
+    while (pixels_converted < kinect_row_pixel_count) {
+        // running averages of colors
+        uint32_t blue_sum = 0;
+        uint32_t green_sum = 0;
+        uint32_t red_sum = 0;
+        for (size_t i = 0; i < pixels_to_merge; ++i) {
+            blue_sum += static_cast<uint32_t>(data[pixels_converted++]);
+            green_sum += static_cast<uint32_t>(data[pixels_converted++]);
+            red_sum += static_cast<uint32_t>(data[pixels_converted++]);
+            pixels_converted++; // This is the X of BGRX that can be ignored
+        }
+        GestureNetPixel g_n_pixel;
+        g_n_pixel.blue = static_cast<uint8_t>(blue_sum / pixels_to_merge);
+        g_n_pixel.green = static_cast<uint8_t>(green_sum / pixels_to_merge);
+        g_n_pixel.red = static_cast<uint8_t>(red_sum / pixels_to_merge);
+        gesturenet_row.emplace_back(std::move(g_n_pixel));
+    }
 
-    static_cast<void>(data);
-    static_cast<void>(pixels_to_merge);
-    static_cast<void>(g_n_pixel);
-    exit_with_error(HERE, "TODO");
-    return {};
+    return gesturenet_row;
 }
 
 /**
  * @brief Convert from a Kinect color frame to a GestureNet input frame
  *
- * @details Convert from 1920x1080xBGRX to 160x160xRGB (probably RGB, unsure)
+ * @details Convert from 1920x1080xBGRX to 160x160xRGB
  * Average out the values of a given color across multiple pixels in order to downscale.
  * Do this for R, G, and B.
  * For width:  1920 / 160 = 12   so the color values across 12 pixels should be averaged
@@ -257,23 +275,21 @@ GestureNetFrame::from_kinect_frame(libfreenect2::Frame::Type frame_type,
         return {};
     }
 
-    // Go over each row
-    for (std::size_t cur_row_idx = 0; cur_row_idx < frame->height; ++cur_row_idx) {
-        // Go over a row of pixels, then go to next row
-        for (std::size_t pixel_in_row = 0; pixel_in_row < frame->width; ++pixel_in_row) {
-        }
+    std::vector<PixelRow> pixel_rows;
+    constexpr std::ptrdiff_t bytes_per_row = 4 * 1920;
+    /// @todo Only grabbing 160 pixels of height
+    unsigned char* frame_data = frame->data;
+    for (size_t cur_row = 0; cur_row < height_in_pixels(); ++cur_row) {
+        pixel_rows.emplace_back(from_kinect_row(frame_data));
+        frame_data += bytes_per_row;
     }
-
-    static_cast<void>(frame);
-    exit_with_error(HERE, "TODO");
-    return {};
+    GestureNetFrame g_n_frame(std::move(pixel_rows));
+    return g_n_frame;
 }
 
 void GestureNetFrame::save_frame(const std::filesystem::path& output) const {
     static_cast<void>(output);
-    exit_with_error(HERE, "TODO");
+    exit_with_error(HERE, "TODO: Save files somewhere to be used by GestureNet");
 }
-
-GestureNetFrame::GestureNetFrame() {}
 
 } // namespace mik
