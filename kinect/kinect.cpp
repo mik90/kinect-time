@@ -87,6 +87,34 @@ Kinect::Kinect(KinectConfig config) : config_(config) {
     registered_ptr_ = new libfreenect2::Frame(512, 424, 4);
 }
 
+void Kinect::start_recording() {
+    std::cout << "starting to record\n";
+    should_record_ = true;
+    recorder_ = std::thread([this]() {
+        constexpr int frame_timeout_ms = 10 * 1'000;
+        while (should_record_) {
+            if (!listener_ptr_->waitForNewFrame(frame_map_, frame_timeout_ms)) {
+                exit_with_error(HERE, "Waited too long to get a frame!");
+            }
+
+            libfreenect2::Frame* rgb_frame = frame_map_[libfreenect2::Frame::Color];
+            [[maybe_unused]] libfreenect2::Frame* ir_frame = frame_map_[libfreenect2::Frame::Ir];
+            libfreenect2::Frame* depth_frame = frame_map_[libfreenect2::Frame::Depth];
+
+            registration_->apply(rgb_frame, depth_frame, undistorted_ptr_, registered_ptr_);
+
+            save_frame_async(libfreenect2::Frame::Color, rgb_frame);
+            save_gnet_frame_async(libfreenect2::Frame::Color, rgb_frame);
+            save_frame_async(libfreenect2::Frame::Ir, ir_frame);
+            save_frame_async(libfreenect2::Frame::Depth, depth_frame);
+        }
+    });
+}
+void Kinect::stop_recording() {
+    should_record_ = false;
+    std::cout << "Told recorder to stop\n";
+}
+
 void Kinect::save_frames(std::uint32_t n_frames_to_save) {
     constexpr int frame_timeout_ms = 10 * 1'000;
     std::uint32_t n_frames_saved = 0;
@@ -104,9 +132,8 @@ void Kinect::save_frames(std::uint32_t n_frames_to_save) {
 
         registration_->apply(rgb_frame, depth_frame, undistorted_ptr_, registered_ptr_);
 
-        ++n_frames_saved;
-        std::cout << "Saving frame " << n_frames_saved << "\n";
         save_frame_async(libfreenect2::Frame::Color, rgb_frame);
+        save_gnet_frame_async(libfreenect2::Frame::Color, rgb_frame);
         save_frame_async(libfreenect2::Frame::Ir, ir_frame);
         save_frame_async(libfreenect2::Frame::Depth, depth_frame);
     }
@@ -145,7 +172,7 @@ std::string frame_format_to_string(libfreenect2::Frame::Format format) {
 }
 
 void save_frame_impl(std::filesystem::path image_output_dir, libfreenect2::Frame::Type frame_type,
-                     libfreenect2::Frame* frame) {
+                     const libfreenect2::Frame* frame) {
     const auto frame_dimensions =
         std::to_string(frame->width) + "x" + std::to_string(frame->height);
     const auto file_name = frame_type_to_string(frame_type) + "-" + frame_dimensions + "-" +
@@ -171,18 +198,28 @@ void save_frame_impl(std::filesystem::path image_output_dir, libfreenect2::Frame
 }
 
 // Synchronous
-void Kinect::save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) const {
+void Kinect::save_frame(libfreenect2::Frame::Type frame_type,
+                        const libfreenect2::Frame* frame) const {
     save_frame_impl(config_.image_output_dir, frame_type, frame);
 }
 
 // Maybe this should just be running on a single separate thread
-void Kinect::save_frame_async(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) {
+void Kinect::save_frame_async(libfreenect2::Frame::Type frame_type,
+                              const libfreenect2::Frame* frame) {
     auto task = std::async([image_output_dir = config_.image_output_dir, frame_type, frame]() {
         save_frame_impl(image_output_dir / "kinect", frame_type, frame);
-        const auto gn_frame = GestureNetFrame::from_kinect_frame(frame_type, frame);
-        gn_frame->save_frame(image_output_dir / "gesturenet", frame->sequence);
     });
     saveTasks_.push(std::move(task));
+}
+void Kinect::save_gnet_frame_async(libfreenect2::Frame::Type frame_type,
+                                   const libfreenect2::Frame* frame) {
+    if (frame_type == libfreenect2::Frame::Type::Color) {
+        const auto gn_frame = GestureNetFrame::from_kinect_frame(libfreenect2::Frame::Color, frame);
+        gn_frame->save_frame(config_.image_output_dir / "gesturenet", frame->sequence);
+    } else {
+        std::cerr << "Not saving frame " << std::to_string(frame->sequence)
+                  << " since it's not RGB\n";
+    }
 }
 
 Kinect::~Kinect() {
@@ -203,6 +240,10 @@ Kinect::~Kinect() {
     device_ptr_->stop();
     device_ptr_->close();
     delete registration_;
+
+    if (recorder_.joinable()) {
+        recorder_.join();
+    }
 }
 
 /// @brief Pixel to pixel conversion

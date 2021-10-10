@@ -9,6 +9,7 @@
 #include <future>
 #include <optional>
 #include <queue>
+#include <thread>
 
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/libfreenect2.hpp>
@@ -30,17 +31,24 @@ class Kinect {
   public:
     Kinect(KinectConfig config);
     ~Kinect();
-    // Save frame to disk
+    // Save frame to disk, best for checking functionality
     void save_frames(std::uint32_t n_frames_to_save);
+
+    void start_recording();
+    void stop_recording();
 
   private:
     /// @todo void lower_resolution(libfreenect2::Frame* frame);
     /// @todo void convert_to_gesture_net(const libfreenect2::Frame* frame);
-    void save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) const;
-    void save_frame_async(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame);
+    void save_frame(libfreenect2::Frame::Type frame_type, const libfreenect2::Frame* frame) const;
+    void save_frame_async(libfreenect2::Frame::Type frame_type, const libfreenect2::Frame* frame);
+    void save_gnet_frame_async(libfreenect2::Frame::Type frame_type,
+                               const libfreenect2::Frame* frame);
 
     KinectConfig config_;
     std::queue<std::future<void>> saveTasks_;
+    std::atomic<bool> should_record_ = false;
+    std::thread recorder_;
 
     // libfreenect2 members
     // Don't use smart pointers as it messes with how libfreenect2 manages these objects.
