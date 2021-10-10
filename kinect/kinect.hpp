@@ -61,6 +61,7 @@ struct GestureNetPixel {
     /// @brief Should be a length of 4 (BGRX)
     static std::optional<GestureNetPixel> from_kinect_bgrx_pixel(const unsigned char* data,
                                                                  std::size_t len);
+    std::array<std::uint8_t, 3> to_bytes() const { return {red, green, blue}; }
 };
 /**
  * @brief Input frame for nvidia GestureNet. Create from a kinect frame
@@ -68,9 +69,9 @@ struct GestureNetPixel {
 class GestureNetFrame {
   public:
     using PixelRow = std::vector<GestureNetPixel>;
-    std::optional<GestureNetFrame> from_kinect_frame(libfreenect2::Frame::Type frame_type,
-                                                     const libfreenect2::Frame* frame);
-    void save_frame(const std::filesystem::path& output) const;
+    static std::optional<GestureNetFrame> from_kinect_frame(libfreenect2::Frame::Type frame_type,
+                                                            const libfreenect2::Frame* frame);
+    void save_frame(const std::filesystem::path& output_dir, size_t sequence) const;
 
     static std::size_t bytes_per_pixel() noexcept { return 3; };
     static std::size_t width_in_pixels() noexcept { return 160; };
@@ -80,9 +81,9 @@ class GestureNetFrame {
     // void downscale_height(); Convert 1920 to 160 pixels
 
   private:
-    GestureNetFrame(std::vector<PixelRow> rows) : pixels_(std::move(rows)){};
+    GestureNetFrame(std::vector<PixelRow> rows) : pixel_rows_(std::move(rows)){};
 
-    std::vector<PixelRow> pixels_;
+    std::vector<PixelRow> pixel_rows_;
 };
 
 } // namespace mik

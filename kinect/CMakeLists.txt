@@ -2,7 +2,6 @@
 
 add_library(kinect
   kinect.cpp
-  kinect.hpp
 )
 
 target_include_directories(kinect PUBLIC

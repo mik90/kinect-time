@@ -159,8 +159,7 @@ void save_frame_impl(std::filesystem::path image_output_dir, libfreenect2::Frame
         file_path, output_stream.out | output_stream.binary);
 
     if (!output_stream.is_open()) {
-        exit_with_error(HERE, "Could not open output stream: " +
-                                  std::string(image_output_dir / file_name));
+        exit_with_error(HERE, "Could not open output stream: " + file_path.string());
     } else {
         std::cout << "Saving frame to " << file_path << "\n";
 
@@ -179,7 +178,9 @@ void Kinect::save_frame(libfreenect2::Frame::Type frame_type, libfreenect2::Fram
 // Maybe this should just be running on a single separate thread
 void Kinect::save_frame_async(libfreenect2::Frame::Type frame_type, libfreenect2::Frame* frame) {
     auto task = std::async([image_output_dir = config_.image_output_dir, frame_type, frame]() {
-        save_frame_impl(image_output_dir, frame_type, frame);
+        save_frame_impl(image_output_dir / "kinect", frame_type, frame);
+        const auto gn_frame = GestureNetFrame::from_kinect_frame(frame_type, frame);
+        gn_frame->save_frame(image_output_dir / "gesturenet", frame->sequence);
     });
     saveTasks_.push(std::move(task));
 }
@@ -287,9 +288,28 @@ GestureNetFrame::from_kinect_frame(libfreenect2::Frame::Type frame_type,
     return g_n_frame;
 }
 
-void GestureNetFrame::save_frame(const std::filesystem::path& output) const {
-    static_cast<void>(output);
-    exit_with_error(HERE, "TODO: Save files somewhere to be used by GestureNet");
+void GestureNetFrame::save_frame(const std::filesystem::path& output_dir, size_t sequence) const {
+
+    const auto file_name = "160x160-BGRX-seq" + std::to_string(sequence) + ".bin";
+
+    const auto file_path = output_dir / file_name;
+
+    // We're writing out unsigned char instead of sgned char
+    std::basic_ofstream<unsigned char, std::char_traits<unsigned char>> output_stream(
+        file_path, output_stream.out | output_stream.binary);
+
+    if (!output_stream.is_open()) {
+        exit_with_error(HERE, "Could not open output stream: " + file_path.string());
+    } else {
+        std::cout << "Saving GestureNet frame to " << file_path << "\n";
+        for (const auto& row : pixel_rows_) {
+            for (const auto& pixel : row) {
+                auto pixel_bytes = pixel.to_bytes();
+                output_stream.write(pixel_bytes.data(), pixel_bytes.size());
+            }
+        }
+        std::cout << "Frame saved.\n ";
+    }
 }
 
 } // namespace mik

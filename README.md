@@ -67,6 +67,8 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
 - [ ] Create Python API with pybind11 so kinect-triton-client can use it
 - [ ] create frame stream
 - [ ] Actually scale down resolution from 1920x1080 to 160x160 properly
+- [ ] Benchmark/Optimize frame conversion
+- [ ] Benchmark/Optimize frame saving
 
 ### nvidia / GestureNet
 
