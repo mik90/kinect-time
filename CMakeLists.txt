@@ -22,6 +22,7 @@ set(CONAN_EXTRA_REQUIRES "")
 set(CONAN_EXTRA_OPTIONS "")
 
 add_subdirectory(third_party/libfreenect2)
+add_subdirectory(third_party/pybind11)
 add_subdirectory(kinect)
 
 if(ENABLE_TESTING)

@@ -41,3 +41,16 @@ target_link_libraries(kinect-test-driver PRIVATE
   project_options
   kinect 
 )
+
+# Python wrapper around kinect
+set(PYBIND11_PYTHON_VERSION 3.9)
+
+pybind11_add_module(kinectpy
+  python.cpp
+)
+
+target_link_libraries(kinectpy PRIVATE
+  project_warnings
+  project_options
+  kinect 
+)

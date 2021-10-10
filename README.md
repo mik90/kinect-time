@@ -81,6 +81,10 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
   - tried to build it from source via CMake FetchContent but it was a pain. Switching to Python
 - [ ] send frames to inference server
   - just send frames that were saved to disk (for now)
+- [ ] Use pybind11 in order to start/stop the recorder
+  - <https://pybind11.readthedocs.io/en/latest/basics.html>
+  - CMake example: <https://github.com/pybind/cmake_example>
+  - Ensure that the compiled python module and py venv versions match
 - [ ] handle frame stream
 
 ## kinect/
@@ -104,9 +108,9 @@ Enter venv and download the packages with
 ```bash
 cd kinect-triton-client
 mkdir env
-python3 -m venv env
-source ./env/bin/activate
-pip install -r ./requirements.txt
+python3.10 -m venv env # This should match the version genereted by pybind11. Unsure what happens if it doesn't
+source env/bin/activate
+pip install -r requirements.txt
 ```
 
 In the venv, the requirements.txt file is generated with `pip freeze > requirements.txt`
