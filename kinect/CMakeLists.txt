@@ -2,6 +2,8 @@
 
 add_library(kinect
   kinect.cpp
+  gesturenet.cpp
+  conversion.cpp
 )
 
 target_include_directories(kinect PUBLIC

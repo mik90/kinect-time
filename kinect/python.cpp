@@ -1,10 +1,9 @@
+#include "kinect.hpp"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
 namespace mik {
-
-int add(int i, int j) { return i + j; }
 
 PYBIND11_MODULE(kinectpy, m) {
     m.doc() = R"pbdoc(
@@ -13,19 +12,15 @@ PYBIND11_MODULE(kinectpy, m) {
         .. currentmodule:: kinect_py
         .. autosummary::
            :toctree: _generate
-           add
-           subtract
     )pbdoc";
+    py::class_<Kinect>(m, "Kinect").def(py::init<KinectConfig>());
 
-    m.def("add", &add, R"pbdoc(
-        Add two numbers
-        Some other explanation about the add function.
+    m.def("start_recording", &Kinect::start_recording, R"pbdoc(
+        Starts recording with Kinect. non-blocking.
     )pbdoc");
 
-    m.def(
-        "subtract", [](int i, int j) { return i - j; }, R"pbdoc(
-        Subtract two numbers
-        Some other explanation about the subtract function.
+    m.def("stop_recording", &Kinect::stop_recording, R"pbdoc(
+        Stops recording with Kinect. non-blocking.
     )pbdoc");
 
     m.attr("__version__") = "dev";

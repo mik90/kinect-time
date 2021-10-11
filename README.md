@@ -85,6 +85,8 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
   - <https://pybind11.readthedocs.io/en/latest/basics.html>
   - CMake example: <https://github.com/pybind/cmake_example>
   - Ensure that the compiled python module and py venv versions match
+  - [ ] Create Kinect object during python object init in pybind11
+  - [ ] start/stop recording
 - [ ] handle frame stream
 
 ## kinect/

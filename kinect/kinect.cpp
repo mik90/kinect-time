@@ -1,4 +1,6 @@
 #include "kinect.hpp"
+#include "conversion.hpp"
+#include "util.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -16,14 +18,6 @@ namespace mik {
 using std::size_t;
 using std::uint32_t;
 using std::uint8_t;
-
-// I'd use std::source_location but clang doesn't have it yet so clangd will complain
-#define HERE __FILE__, __LINE__
-void exit_with_error(const char* file, std::uint32_t line, std::string_view err_msg) {
-    std::cerr << file << ":" << line << " - " << err_msg << "\n";
-    std::cerr << "Exiting with return code 1\n";
-    std::exit(1);
-}
 
 Kinect::Kinect(KinectConfig config) : config_(config) {
 
@@ -139,7 +133,7 @@ void Kinect::save_frames(std::uint32_t n_frames_to_save) {
     }
 }
 
-std::string frame_type_to_string(libfreenect2::Frame::Type type) {
+std::string Kinect::frame_type_to_string(libfreenect2::Frame::Type type) {
     switch (type) {
     case libfreenect2::Frame::Color:
         return "Color";
@@ -152,7 +146,7 @@ std::string frame_type_to_string(libfreenect2::Frame::Type type) {
     }
 }
 
-std::string frame_format_to_string(libfreenect2::Frame::Format format) {
+std::string Kinect::frame_format_to_string(libfreenect2::Frame::Format format) {
     switch (format) {
     case libfreenect2::Frame::Format::Invalid:
         return "Invalid";
@@ -171,8 +165,9 @@ std::string frame_format_to_string(libfreenect2::Frame::Format format) {
     }
 }
 
-void save_frame_impl(std::filesystem::path image_output_dir, libfreenect2::Frame::Type frame_type,
-                     const libfreenect2::Frame* frame) {
+void Kinect::save_frame_impl(std::filesystem::path image_output_dir,
+                             libfreenect2::Frame::Type frame_type,
+                             const libfreenect2::Frame* frame) {
     const auto frame_dimensions =
         std::to_string(frame->width) + "x" + std::to_string(frame->height);
     const auto file_name = frame_type_to_string(frame_type) + "-" + frame_dimensions + "-" +
@@ -214,7 +209,7 @@ void Kinect::save_frame_async(libfreenect2::Frame::Type frame_type,
 void Kinect::save_gnet_frame_async(libfreenect2::Frame::Type frame_type,
                                    const libfreenect2::Frame* frame) {
     if (frame_type == libfreenect2::Frame::Type::Color) {
-        const auto gn_frame = GestureNetFrame::from_kinect_frame(libfreenect2::Frame::Color, frame);
+        const auto gn_frame = Conversion::from_kinect_frame(libfreenect2::Frame::Color, frame);
         gn_frame->save_frame(config_.image_output_dir / "gesturenet", frame->sequence);
     } else {
         std::cerr << "Not saving frame " << std::to_string(frame->sequence)
@@ -243,113 +238,6 @@ Kinect::~Kinect() {
 
     if (recorder_.joinable()) {
         recorder_.join();
-    }
-}
-
-/// @brief Pixel to pixel conversion
-std::optional<GestureNetPixel> GestureNetPixel::from_kinect_bgrx_pixel(const unsigned char* data,
-                                                                       std::size_t len) {
-    if (len != 4) {
-        std::cerr << "Cannot convert chunk of length " << std::to_string(len)
-                  << " to a GestureNetPixel\n";
-        return {};
-    }
-    // BGRX -> RGB
-    GestureNetPixel g_net_pixel;
-    g_net_pixel.blue = data[0];
-    g_net_pixel.green = data[1];
-    g_net_pixel.red = data[2];
-    // Disregard the last byte, but still require a length of 4 since a kinect pixel is technically
-    // 4 bytes
-    return g_net_pixel;
-}
-
-/**
- * @brief For width:  1920 / 160 = 12   so the color values across 12 pixels should be averaged
- */
-GestureNetFrame::PixelRow GestureNetFrame::from_kinect_row(const unsigned char* data) {
-    // Convert to GestureNet PixelRow format
-    GestureNetFrame::PixelRow g_n_row;
-    g_n_row.reserve(bytes_per_pixel() * width_in_pixels());
-    constexpr size_t kinect_row_pixel_count = 1920;
-    const auto pixels_to_merge = kinect_row_pixel_count / width_in_pixels(); // 12
-
-    PixelRow gesturenet_row;
-
-    // Keep merging 12 red, green, and blue pixels with each other until the end of the row is hit
-    size_t pixels_converted = 0;
-    while (pixels_converted < kinect_row_pixel_count) {
-        // running averages of colors
-        uint32_t blue_sum = 0;
-        uint32_t green_sum = 0;
-        uint32_t red_sum = 0;
-        for (size_t i = 0; i < pixels_to_merge; ++i) {
-            blue_sum += static_cast<uint32_t>(data[pixels_converted++]);
-            green_sum += static_cast<uint32_t>(data[pixels_converted++]);
-            red_sum += static_cast<uint32_t>(data[pixels_converted++]);
-            pixels_converted++; // This is the X of BGRX that can be ignored
-        }
-        GestureNetPixel g_n_pixel;
-        g_n_pixel.blue = static_cast<uint8_t>(blue_sum / pixels_to_merge);
-        g_n_pixel.green = static_cast<uint8_t>(green_sum / pixels_to_merge);
-        g_n_pixel.red = static_cast<uint8_t>(red_sum / pixels_to_merge);
-        gesturenet_row.emplace_back(std::move(g_n_pixel));
-    }
-
-    return gesturenet_row;
-}
-
-/**
- * @brief Convert from a Kinect color frame to a GestureNet input frame
- *
- * @details Convert from 1920x1080xBGRX to 160x160xRGB
- * Average out the values of a given color across multiple pixels in order to downscale.
- * Do this for R, G, and B.
- * For width:  1920 / 160 = 12   so the color values across 12 pixels should be averaged
- * For height: 1080 / 160 = 6.75 so this won't be as simple. How to figure this out?
- */
-std::optional<GestureNetFrame>
-GestureNetFrame::from_kinect_frame(libfreenect2::Frame::Type frame_type,
-                                   const libfreenect2::Frame* frame) {
-    if (frame_type != libfreenect2::Frame::Type::Color) {
-        std::cerr << "Cannot convert frame from " << frame_type_to_string(frame_type)
-                  << " to GestureNestFrame\n";
-        return {};
-    }
-
-    std::vector<PixelRow> pixel_rows;
-    constexpr std::ptrdiff_t bytes_per_row = 4 * 1920;
-    /// @todo Only grabbing 160 pixels of height
-    unsigned char* frame_data = frame->data;
-    for (size_t cur_row = 0; cur_row < height_in_pixels(); ++cur_row) {
-        pixel_rows.emplace_back(from_kinect_row(frame_data));
-        frame_data += bytes_per_row;
-    }
-    GestureNetFrame g_n_frame(std::move(pixel_rows));
-    return g_n_frame;
-}
-
-void GestureNetFrame::save_frame(const std::filesystem::path& output_dir, size_t sequence) const {
-
-    const auto file_name = "160x160-BGRX-seq" + std::to_string(sequence) + ".bin";
-
-    const auto file_path = output_dir / file_name;
-
-    // We're writing out unsigned char instead of sgned char
-    std::basic_ofstream<unsigned char, std::char_traits<unsigned char>> output_stream(
-        file_path, output_stream.out | output_stream.binary);
-
-    if (!output_stream.is_open()) {
-        exit_with_error(HERE, "Could not open output stream: " + file_path.string());
-    } else {
-        std::cout << "Saving GestureNet frame to " << file_path << "\n";
-        for (const auto& row : pixel_rows_) {
-            for (const auto& pixel : row) {
-                auto pixel_bytes = pixel.to_bytes();
-                output_stream.write(pixel_bytes.data(), pixel_bytes.size());
-            }
-        }
-        std::cout << "Frame saved.\n ";
     }
 }
 

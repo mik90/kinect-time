@@ -1,8 +1,9 @@
+#pragma once
+
 /*
  * Wrapper around libfreenect2 to use a kinect and write images out as files
  * Basing this impl off of libfreenect2's Protonect.cpp
  */
-#include "libfreenect2/frame_listener.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -11,6 +12,7 @@
 #include <queue>
 #include <thread>
 
+#include <libfreenect2/frame_listener.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/logger.h>
@@ -31,6 +33,10 @@ class Kinect {
   public:
     Kinect(KinectConfig config);
     ~Kinect();
+
+    static std::string frame_type_to_string(libfreenect2::Frame::Type type);
+    static std::string frame_format_to_string(libfreenect2::Frame::Format format);
+
     // Save frame to disk, best for checking functionality
     void save_frames(std::uint32_t n_frames_to_save);
 
@@ -44,6 +50,9 @@ class Kinect {
     void save_frame_async(libfreenect2::Frame::Type frame_type, const libfreenect2::Frame* frame);
     void save_gnet_frame_async(libfreenect2::Frame::Type frame_type,
                                const libfreenect2::Frame* frame);
+    static void save_frame_impl(std::filesystem::path image_output_dir,
+                                libfreenect2::Frame::Type frame_type,
+                                const libfreenect2::Frame* frame);
 
     KinectConfig config_;
     std::queue<std::future<void>> saveTasks_;
@@ -60,38 +69,6 @@ class Kinect {
     libfreenect2::Frame* registered_ptr_ = nullptr;
     libfreenect2::FrameMap frame_map_;
     libfreenect2::SyncMultiFrameListener* listener_ptr_ = nullptr;
-};
-
-struct GestureNetPixel {
-    std::uint8_t red;
-    std::uint8_t green;
-    std::uint8_t blue;
-    /// @brief Should be a length of 4 (BGRX)
-    static std::optional<GestureNetPixel> from_kinect_bgrx_pixel(const unsigned char* data,
-                                                                 std::size_t len);
-    std::array<std::uint8_t, 3> to_bytes() const { return {red, green, blue}; }
-};
-/**
- * @brief Input frame for nvidia GestureNet. Create from a kinect frame
- */
-class GestureNetFrame {
-  public:
-    using PixelRow = std::vector<GestureNetPixel>;
-    static std::optional<GestureNetFrame> from_kinect_frame(libfreenect2::Frame::Type frame_type,
-                                                            const libfreenect2::Frame* frame);
-    void save_frame(const std::filesystem::path& output_dir, size_t sequence) const;
-
-    static std::size_t bytes_per_pixel() noexcept { return 3; };
-    static std::size_t width_in_pixels() noexcept { return 160; };
-    static std::size_t height_in_pixels() noexcept { return 160; };
-    // Unused as of yet
-    static GestureNetFrame::PixelRow from_kinect_row(const unsigned char* data);
-    // void downscale_height(); Convert 1920 to 160 pixels
-
-  private:
-    GestureNetFrame(std::vector<PixelRow> rows) : pixel_rows_(std::move(rows)){};
-
-    std::vector<PixelRow> pixel_rows_;
 };
 
 } // namespace mik
