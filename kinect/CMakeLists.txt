@@ -4,6 +4,7 @@ add_library(kinect
   kinect.cpp
   gesturenet.cpp
   conversion.cpp
+  util.cpp
 )
 
 target_include_directories(kinect PUBLIC
@@ -55,4 +56,9 @@ target_link_libraries(kinectpy PRIVATE
   project_warnings
   project_options
   kinect 
+)
+
+set_target_properties(kinectpy 
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )

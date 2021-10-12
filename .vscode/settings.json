@@ -9,5 +9,11 @@
     "cmake.preferredGenerators": [
         "Ninja"
     ],
-    "python.pythonPath": "${workspaceFolder}/kinect-triton-client/env/bin/python"
+    "python.pythonPath": "${workspaceFolder}/kinect-triton-client/env/bin/python",
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/build/lib"
+    ],
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/build/lib"
+    ]
 }

@@ -1,9 +1,18 @@
 # Based off of https://github.com/triton-inference-server/client/blob/main/src/python/examples/simple_grpc_infer_client.py
 
-import argparse
-import sys
-import numpy as np
+from pathlib import Path
 import tritonclient.grpc as grpcclient
+import numpy as np
+import argparse
+# fmt: off
+import sys
+kinectpy_outdir = str((Path() / ".." / "build" / "lib").resolve())
+sys.path.insert(0, kinectpy_outdir)
+print(f"kinectpy_outdir: {kinectpy_outdir}")
+import kinectpy
+# fmt: on
+
+# output from kinectpy
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

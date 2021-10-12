@@ -16,9 +16,10 @@ GestureNet is a gesture recognition model from nvidia.
 I use gentoo and made use of guru's overlay from this search: <http://gpo.zugaina.org/app-emulation/nvidia-container-toolkit>
 
 This is the guide I'm following: <https://developer.nvidia.com/blog/fast-tracking-hand-gesture-recognition-ai-applications-with-pretrained-models-from-ngc/>
-    - The GestureNet doc has fp16 in one place and FP_32 in another for the model input/output types
-    - It also writes tlt-converter and trt-converter although only tao-converter was in the image, maybe it's older
-    - [ ] tell the nvidia folk that their doc is outdated, make a PR if it's in github
+
+- The GestureNet doc has fp16 in one place and FP_32 in another for the model input/output types
+- It also writes tlt-converter and trt-converter although only tao-converter was in the image, maybe it's older
+- [ ] tell the nvidia folk that their doc is outdated, make a PR if it's in github
 
 GestureNet - pre-trained model: <https://ngc.nvidia.com/catalog/models/nvidia:tao:gesturenet>
 
