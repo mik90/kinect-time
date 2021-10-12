@@ -25,13 +25,13 @@ enum class InputPipeline { CUDA, OPENGL, CPU, OTHER };
 struct KinectConfig {
     InputPipeline framework = InputPipeline::CPU;
     int32_t gpu_device_id = 0; // TODO Figure out what this should be, also make optional
-    std::filesystem::path image_output_dir = "~/Development/kinect-time/kinect-frames";
+    std::filesystem::path image_output_dir = std::filesystem::path() / "kinect-frames";
     // Use rgb and depth by default
 };
 
 class Kinect {
   public:
-    Kinect(KinectConfig config);
+    Kinect(KinectConfig config = KinectConfig());
     ~Kinect();
 
     static std::string frame_type_to_string(libfreenect2::Frame::Type type);

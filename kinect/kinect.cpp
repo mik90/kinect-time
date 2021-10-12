@@ -12,6 +12,7 @@
 #include <iterator>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace mik {
 
@@ -22,10 +23,14 @@ using std::uint8_t;
 Kinect::Kinect(KinectConfig config) : config_(config) {
 
     if (!std::filesystem::exists(config_.image_output_dir)) {
-        if (!std::filesystem::create_directory(config_.image_output_dir)) {
-            exit_with_error(HERE,
-                            "Could not create directory: " + std::string(config_.image_output_dir));
+        std::cout << config_.image_output_dir.c_str() << " does not exist, creating it...\n";
+        std::error_code error;
+        if (!std::filesystem::create_directory(config_.image_output_dir, error)) {
+            exit_with_error(HERE, "Could not create directory \'" +
+                                      std::string(config_.image_output_dir) +
+                                      "\': " + error.message());
         }
+        std::cout << "Created " << config_.image_output_dir.c_str() << "\n";
     }
 
     std::cout << "Writing images to " << config_.image_output_dir << "\n";

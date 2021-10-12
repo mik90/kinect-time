@@ -15,5 +15,5 @@
     ],
     "python.analysis.extraPaths": [
         "${workspaceFolder}/build/lib"
-    ]
+    ],
 }

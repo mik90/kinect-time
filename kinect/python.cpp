@@ -13,13 +13,12 @@ PYBIND11_MODULE(kinectpy, m) {
         .. autosummary::
            :toctree: _generate
     )pbdoc";
-    py::class_<Kinect>(m, "Kinect").def(py::init<KinectConfig>());
-
-    m.def("start_recording", &Kinect::start_recording, R"pbdoc(
+    py::class_<Kinect>(m, "Kinect")
+        .def(py::init<>())
+        .def("start_recording", &Kinect::start_recording, R"pbdoc(
         Starts recording with Kinect. non-blocking.
-    )pbdoc");
-
-    m.def("stop_recording", &Kinect::stop_recording, R"pbdoc(
+    )pbdoc")
+        .def("stop_recording", &Kinect::stop_recording, R"pbdoc(
         Stops recording with Kinect. non-blocking.
     )pbdoc");
 

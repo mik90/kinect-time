@@ -4,6 +4,7 @@ from pathlib import Path
 import tritonclient.grpc as grpcclient
 import numpy as np
 import argparse
+import time
 # fmt: off
 import sys
 kinectpy_outdir = str((Path() / ".." / "build" / "lib").resolve())
@@ -31,6 +32,13 @@ if __name__ == '__main__':
         sys.exit()
 
     model_name = "GestureNet"
+    kinect = kinectpy.Kinect()
+    print("Created Kinect obj")
+    print("Starting recording")
+    kinect.start_recording()
+    time.sleep(5)  # seconds
+    kinect.stop_recording()
+    print("Stopped recording")
 
     # Infer
     inputs = []

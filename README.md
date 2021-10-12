@@ -65,9 +65,10 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
   - [x] Merge the width and just disregard the bottom half of the image
 - ~~[ ] Use smart pointers instead of raw pointers around libfreenect2 objects~~
   - Nope, this isn't worth it. Just causes segfaults when the test-driver is done running
-- [ ] Create Python API with pybind11 so kinect-triton-client can use it
+- [x] Create Python API with pybind11 so kinect-triton-client can use it
 - [ ] create frame stream
 - [ ] Actually scale down resolution from 1920x1080 to 160x160 properly
+  - as of now, it just merges pixels width-wise and only grabs the top 160 pixels
 - [ ] Benchmark/Optimize frame conversion
 - [ ] Benchmark/Optimize frame saving
 
@@ -86,8 +87,8 @@ Triton Inference Server - inference: <https://ngc.nvidia.com/catalog/containers/
   - <https://pybind11.readthedocs.io/en/latest/basics.html>
   - CMake example: <https://github.com/pybind/cmake_example>
   - Ensure that the compiled python module and py venv versions match
-  - [ ] Create Kinect object during python object init in pybind11
-  - [ ] start/stop recording
+  - [x] Create Kinect object during python object init in pybind11
+  - [x] start/stop recording - defaulting at 5 seconds for now
 - [ ] handle frame stream
 
 ## kinect/
